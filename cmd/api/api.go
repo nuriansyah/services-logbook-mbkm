@@ -55,6 +55,9 @@ func NewAPi(userRepo repository.UserRepository, pembRepo repository.PembimbingRe
 		reportingRouter.PUT("/:id", api.editRequest)
 		reportingRouter.GET("/postsDosen", api.readsReportingByDosen)
 		reportingRouter.GET("/postsMhs", api.readsReportingByMhs)
+		reportingRouter.POST("/upload", api.uploadPostDocs)
+		reportingRouter.POST("/download/:post_id", api.downloadPostDoc)
+		reportingRouter.GET("/count", api.countAllStatus)
 
 	}
 	dosenRouter := router.Group("/api/dosen", AuthMiddleware())
