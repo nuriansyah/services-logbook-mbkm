@@ -190,13 +190,45 @@ func (u *UserRepository) FetchMahasiswaByDosenID(dosenID int) ([]MahasiswaDetail
 	mahasiswa := []MahasiswaDetail{}
 	for rows.Next() {
 		var m MahasiswaDetail
-		err = rows.Scan(&m.Id, &m.DosenName, &m.Nrp, &m.Name, &m.Company, &m.LearnPath, &m.Program, &m.Batch)
+		err = rows.Scan(&m.Id, &m.DosenName, &m.Name, &m.Nrp, &m.Company, &m.LearnPath, &m.Program, &m.Batch)
 		if err != nil {
 			return nil, err
 		}
 		mahasiswa = append(mahasiswa, m)
 	}
 	return mahasiswa, nil
+}
+
+func (u *UserRepository) FetchMahasiwaDetailsByDosenID(dosenID int) ([]MahasiswaDetails, error) {
+	sqlStatement := `SELECT  m.id,m.name,m.nrp,
+        md.company, md.program_km,md.learn_path,md.batch,
+        r.id,r.title,r.content,
+        s.status,
+        r.created_at
+					 FROM mahasiswa m
+					 LEFT JOIN mahasiswa_details md on m.id = md.mahasiswa_id
+					 RIGHT OUTER JOIN pembimbing p on m.id = p.mahasiswa_id
+				     JOIN status s on s.id = p.status_id
+					 JOIN dosen d on d.id = p.dosen_pembimbing_id
+                     JOIN reporting r on p.id = r.pembimbing_id
+                     	WHERE p.dosen_pembimbing_id = $1`
+	rows, err := u.db.Query(sqlStatement, dosenID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	mhsDetails := []MahasiswaDetails{}
+	for rows.Next() {
+		var mds MahasiswaDetails
+		err = rows.Scan(&mds.ID, &mds.Name, &mds.Nrp,
+			&mds.Company, &mds.Program, &mds.LearnPath, &mds.Batch,
+			&mds.ReportID, &mds.Title, &mds.Content, &mds.Status, &mds.CreatedAT)
+		if err != nil {
+			return nil, err
+		}
+		mhsDetails = append(mhsDetails, mds)
+	}
+	return mhsDetails, err
 }
 
 func (u *UserRepository) FetchDataDosen(id int) ([]Dosen, error) {
