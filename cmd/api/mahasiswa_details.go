@@ -24,6 +24,29 @@ type ResponseMahasiswa struct {
 	Batch     int    `json:"batch"`
 }
 
+type DetailsResponseReporting struct {
+	ResponseMahasiswaDetails
+	Details []ResponseReportingDetails `json:"details"`
+}
+
+type ResponseMahasiswaDetails struct {
+	ID        int    `json:"id"`
+	Nama      string `json:"nama"`
+	Nrp       string `json:"nrp"`
+	Company   string `json:"company"`
+	ProgramKM string `json:"program_km"`
+	LearnPath string `json:"learn_path"`
+	Batch     int    `json:"batch"`
+}
+
+type ResponseReportingDetails struct {
+	ID        int    `json:"ReportID"`
+	Title     string `json:"title"`
+	Content   string `json:"content"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"created_at"`
+}
+
 type ErrorMahasiswaResponse struct {
 	Message string `json:"message"`
 }
@@ -47,7 +70,7 @@ func (api *API) insertDetailMhs(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusCreated)
+	c.JSON(http.StatusCreated, SuccessMahasiswaResponse{Message: "Success Insert Data!"})
 }
 
 func (api *API) editDetailMhs(c *gin.Context) {
@@ -110,13 +133,14 @@ func (api *API) fetchMahasiswaByMhs(c *gin.Context) {
 		Batch:     batch,
 	})
 }
+
 func (api *API) fetchMahasiswaByDsn(c *gin.Context) {
 	dosenID, err := api.getUserIdFromToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, ErrorMahasiswaResponse{Message: err.Error()})
 		return
 	}
-	mhs, err := api.userRepo.FetchMahasiswaByDosenID(dosenID)
+	mhs, err := api.userRepo.FetchMahasiwaDetailsByDosenID(dosenID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorMahasiswaResponse{Message: err.Error()})
 		return
@@ -125,35 +149,81 @@ func (api *API) fetchMahasiswaByDsn(c *gin.Context) {
 		c.JSON(http.StatusNotFound, ErrorMahasiswaResponse{Message: "Student not found"})
 		return
 	}
+	var (
+		company, programKM, learnPath string
+		batch                         int
+	)
 
-	var reponseListMahasiswa []ResponseMahasiswa
-	for _, mhsList := range mhs {
-		var (
-			company, programKM, learnPath string
-			batch                         int
-		)
-		if mhsList.Company.Valid {
-			company = mhsList.Company.String
-		}
-		if mhsList.Program.Valid {
-			programKM = mhsList.Program.String
-		}
-		if mhsList.LearnPath.Valid {
-			learnPath = mhsList.LearnPath.String
-		}
-		if mhsList.Batch.Valid {
-			batch = int(mhsList.Batch.Int32)
-		}
-		reponseListMahasiswa = append(reponseListMahasiswa, ResponseMahasiswa{
-			ID:        mhsList.Id,
-			DosenName: mhsList.DosenName,
-			Nama:      mhsList.Name,
-			Nrp:       mhsList.Nrp,
-			Company:   company,
-			ProgramKM: programKM,
-			LearnPath: learnPath,
-			Batch:     batch,
+	details := make([]ResponseReportingDetails, 0)
+
+	for _, detil := range mhs {
+
+		details = append(details, ResponseReportingDetails{
+			ID:      detil.ReportID,
+			Title:   detil.Title,
+			Content: detil.Content,
+			Status:  detil.Status,
 		})
 	}
-	c.JSON(http.StatusOK, reponseListMahasiswa)
+
+	postIDqueue := make([]int, 0)
+	postsDetail := make(map[int]ResponseMahasiswaDetails)
+
+	for _, post := range mhs {
+		if _, ok := postsDetail[post.ID]; !ok {
+			if len(postIDqueue) == 0 || postIDqueue[len(postIDqueue)-1] != post.ID {
+				postIDqueue = append(postIDqueue, post.ID)
+			}
+			if post.Batch.Valid {
+				batch = int(post.Batch.Int32)
+			}
+			if post.Company.Valid {
+				company = post.Company.String
+			}
+			if post.Program.Valid {
+				programKM = post.Program.String
+			}
+			if post.LearnPath.Valid {
+				learnPath = post.LearnPath.String
+			}
+			postsDetail[post.ID] = ResponseMahasiswaDetails{
+				ID:        post.ID,
+				Nama:      post.Name,
+				Nrp:       post.Nrp,
+				Company:   company,
+				ProgramKM: programKM,
+				LearnPath: learnPath,
+				Batch:     batch,
+			}
+		}
+	}
+
+	detailed := make(map[int][]ResponseReportingDetails)
+
+	for _, post := range mhs {
+		if _, ok := detailed[post.ID]; !ok {
+			detailed[post.ID] = make([]ResponseReportingDetails, 0)
+		}
+
+		if post.ReportID != 0 {
+			detailed[post.ID] = append(detailed[post.ID], ResponseReportingDetails{
+				ID:        post.ReportID,
+				Title:     post.Title,
+				Content:   post.Content,
+				Status:    post.Status,
+				CreatedAt: post.CreatedAT.Format("2006-01-02 15:04:05"),
+			})
+		}
+	}
+
+	postsReponse := make([]DetailsResponseReporting, 0)
+
+	for _, postID := range postIDqueue {
+		postsReponse = append(postsReponse, DetailsResponseReporting{
+			ResponseMahasiswaDetails: postsDetail[postID],
+			Details:                  detailed[postID],
+		})
+	}
+
+	c.JSON(http.StatusOK, postsReponse)
 }
