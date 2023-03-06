@@ -30,7 +30,11 @@ type ResponseReporting struct {
 	CreatedAt string `json:"created_at"`
 	SuccessReportingResponse
 }
-
+type AllStatusResponse struct {
+	Accepted int `json:"accepted"`
+	Pending  int `json:"pending"`
+	Reject   int `json:"rejected"`
+}
 type ResponseInsertReporting struct {
 	ID int `json:"id"`
 	SuccessReportingResponse
@@ -61,7 +65,7 @@ func (api *API) insertRequest(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, ErrorPembimbingResponse{Message: err.Error()})
 		return
 	}
-	reportID, err := api.reportRepo.InsertReporting(req.Title, req.Content, int(DosenID))
+	reportID, err := api.reportRepo.InsertReporting(req.Title, req.Content, DosenID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorPembimbingResponse{Message: err.Error()})
 		return
@@ -221,12 +225,16 @@ func (api *API) getUserIDAvoidPanic(ctx *gin.Context) (authorID int) {
 
 func (api *API) uploadPostDocs(ctx *gin.Context) {
 	var (
-		postID int
-		err    error
+		err error
 	)
-
-	if postID, err = strconv.Atoi(ctx.Param("id")); err != nil {
-		ctx.JSON(http.StatusBadRequest, ErrorReportingResponse{Message: "Invalid Post ID"})
+	mhsID, err := api.getUserIdFromToken(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorPembimbingResponse{Message: err.Error()})
+		return
+	}
+	DosenID, err := api.reportRepo.FetchPembimbingByID(mhsID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorPembimbingResponse{Message: err.Error()})
 		return
 	}
 
@@ -290,7 +298,7 @@ func (api *API) uploadPostDocs(ctx *gin.Context) {
 			}
 
 			unixTime := time.Now().UTC().UnixNano()
-			fileName := fmt.Sprintf("%d-%d-%s", postID, unixTime, file.Filename)
+			fileName := fmt.Sprintf("%d-%d-%s", DosenID, unixTime, file.Filename)
 			fileLocation := filepath.Join(folderPath, fileName+extension)
 			targetFile, err := os.OpenFile(fileLocation, os.O_WRONLY|os.O_CREATE, 0666)
 
@@ -306,10 +314,10 @@ func (api *API) uploadPostDocs(ctx *gin.Context) {
 				return
 			}
 			mu.Lock()
-			//if err := api.postRepo.InsertPostDoc(postID, fileLocation); err != nil {
-			//	ctx.JSON(http.StatusInternalServerError, ErrorReportingResponse{Message: err.Error()})
-			//	return
-			//}
+			if err := api.reportRepo.InsertFileReporting(fileLocation, DosenID); err != nil {
+				ctx.JSON(http.StatusInternalServerError, ErrorReportingResponse{Message: err.Error()})
+				return
+			}
 			mu.Unlock()
 		}(file)
 	}
@@ -318,7 +326,59 @@ func (api *API) uploadPostDocs(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, SuccessReportingResponse{Message: "Post Documents Uploaded"})
 }
+
+func (api *API) downloadPostDoc(ctx *gin.Context) {
+	var (
+		postID int
+		err    error
+	)
+
+	if postID, err = strconv.Atoi(ctx.Param("post_id")); err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorReportingResponse{Message: "Invalid Post ID"})
+		return
+	}
+
+	fileName := ctx.Param("file_name")
+	filePath := filepath.Join("media/post", fmt.Sprintf("%d-%s", postID, fileName))
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		ctx.JSON(http.StatusNotFound, ErrorReportingResponse{Message: "File Not Found"})
+		return
+	}
+
+	ctx.File(filePath)
+}
+
 func isWordOrPDFFile(filename string) bool {
 	ext := filepath.Ext(filename)
 	return ext == ".doc" || ext == ".docx" || ext == ".pdf"
+}
+
+func (api *API) countAllStatus(c *gin.Context) {
+	mhsID, err := api.getUserIdFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorReportingResponse{Message: err.Error()})
+		return
+	}
+	PemID, err := api.pembRepo.FetchMhsID(mhsID)
+	countPending, err := api.reportRepo.CountReportingPending(PemID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorReportingResponse{Message: "Error counting pending reports"})
+		return
+	}
+	countAccepted, err := api.reportRepo.CountReportingApproved(PemID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorReportingResponse{Message: "Error counting accepted reports"})
+		return
+	}
+	countReject, err := api.reportRepo.CountReportingReject(PemID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorReportingResponse{Message: "Error counting reject reports"})
+		return
+	}
+	c.JSON(http.StatusOK, AllStatusResponse{
+		Pending:  countPending,
+		Accepted: countAccepted,
+		Reject:   countReject,
+	})
 }

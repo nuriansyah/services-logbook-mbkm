@@ -36,6 +36,7 @@ func (r *ReportingRepository) InsertReporting(title, content string, dosenID int
 	}
 	return id, err
 }
+
 func (r *ReportingRepository) UpdateReporting(title, content string, dosenID, reportID int) (err error) {
 	sqlStatement := "UPDATE reporting SET title = $1, content = $2, pembimbing_id = $3, updated_at = $4 WHERE id = $5"
 	tx, err := r.db.Begin()
@@ -104,6 +105,7 @@ func (r *ReportingRepository) FetchAuthorIDbyReportID(postID, AuthorID int) ([]R
 
 	return reports, nil
 }
+
 func (r *ReportingRepository) FetchReportByDosenID(pembID int) ([]Reporting, error) {
 	sqlStatement := "SELECT id,title,content,pembimbing_id,status_id,created_at FROM reporting WHERE pembimbing_id = $1"
 	tx, err := r.db.Begin()
@@ -187,8 +189,107 @@ func (r *ReportingRepository) FetchAuthorByMhsID(AuthorID int) ([]Reporting, err
 	return reports, nil
 }
 
-func (r *ReportingRepository) FetchPembimbingByID(mhsID int) (int64, error) {
-	sqlStatement := "SELECT dosen_pembimbing_id FROM pembimbing WHERE mahasiswa_id = $1"
+func (r *ReportingRepository) FetchPembimbingByID(mhsID int) (int, error) {
+	sqlStatement := "SELECT id FROM pembimbing WHERE mahasiswa_id = $1"
+	tx, err := r.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	var id int
+	err = tx.QueryRow(sqlStatement, mhsID).Scan(&id)
+
+	return id, err
+}
+
+func (r *ReportingRepository) InsertFileReporting(path string, dosenID int) (err error) {
+	sqlStatement := `INSERT INTO reporting_files (file_path,created_at,pembimbing_id) VALUES $1,$2,$3`
+	tx, err := r.db.Begin()
+	if err != nil {
+		return
+	}
+	defer tx.Rollback()
+	var id int
+	err = tx.QueryRow(sqlStatement, path, time.Now(), dosenID).Scan(&id)
+	if err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ReportingRepository) CountReportingApproved(mhsID int) (int, error) {
+	sqlStatement := `SELECT count(r.status_id)
+						FROM reporting r 
+						LEFT JOIN pembimbing p ON r.pembimbing_id = p.id
+						WHERE r.status_id = 2 AND p.mahasiswa_id = $1`
+	tx, err := r.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	var count int
+	err = tx.QueryRow(sqlStatement, mhsID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (r *ReportingRepository) CountReportingPending(mhsID int) (int, error) {
+	sqlStatement := `SELECT count(r.status_id)
+						FROM reporting r 
+						LEFT JOIN pembimbing p ON r.pembimbing_id = p.id
+						WHERE r.status_id = 1 AND p.mahasiswa_id = $1`
+	tx, err := r.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	var count int
+	err = tx.QueryRow(sqlStatement, mhsID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (r *ReportingRepository) CountReportingReject(mhsID int) (int, error) {
+	sqlStatement := `SELECT count(r.status_id ) 
+							FROM reporting r 
+							LEFT JOIN pembimbing p on r.pembimbing_id = p.id
+							WHERE r.status_id = 3 AND r.pembimbing_id = $1`
+	tx, err := r.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	err = tx.QueryRow(sqlStatement, mhsID).Scan(&mhsID)
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+	return mhsID, err
+}
+
+func (r *ReportingRepository) FetchMhsID(mhsID int) (int, error) {
+	sqlStatement := `SELECT id from pembimbing
+					left join mahasiswa m on m.id = pembimbing.mahasiswa_id
+					where m.id = $1`
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, err
@@ -196,5 +297,5 @@ func (r *ReportingRepository) FetchPembimbingByID(mhsID int) (int64, error) {
 	defer tx.Rollback()
 	err = tx.QueryRow(sqlStatement, mhsID).Scan(&mhsID)
 
-	return int64(mhsID), nil
+	return mhsID, nil
 }
