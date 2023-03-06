@@ -16,7 +16,15 @@ services:
     networks:
       - service-logbook-km
     restart: always
-
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ~/redis-data:/data
+    restart: always
+    command:
+      - redis-server --requirepass redis-12345
 networks:
   service-logbook-km:
     driver: bridge
