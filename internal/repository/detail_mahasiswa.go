@@ -1,6 +1,9 @@
 package repository
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
 type DetailMahasiswaRepository struct {
 	db *sql.DB
@@ -22,6 +25,22 @@ type MahasiswaDetail struct {
 	Batch     sql.NullInt32  `db:"batch"`
 	DosenID   int            `json:"dosen_id"`
 	DosenName string         `json:"dosenName"`
+}
+
+type MahasiswaDetails struct {
+	ID        int            `db:"id"`
+	Name      string         `db:"name"`
+	Nrp       string         `db:"nrp"`
+	Company   sql.NullString `db:"company"`
+	Program   sql.NullString `db:"program_km"`
+	Prodi     sql.NullString `json:"prodi"`
+	LearnPath sql.NullString `db:"learn_path"`
+	Batch     sql.NullInt32  `db:"batch"`
+	ReportID  int            `db:"id"`
+	Title     string         `json:"title"`
+	Content   string         `json:"content"`
+	Status    string         `json:"status"`
+	CreatedAT time.Time      `db:"createdAt"`
 }
 
 func (d *DetailMahasiswaRepository) InsertDetailMahasiswa(mahasiswaID int, company string, programKM string, learnPath string, batch int) error {
