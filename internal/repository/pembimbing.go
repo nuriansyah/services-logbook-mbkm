@@ -36,7 +36,7 @@ func (p *PembimbingRepository) RequestPembimbing(mahasiswa_id, dosen_pembimbing_
 
 	// Check if the dosen_pembimbing exists in the table
 	var countDosenPembimbing int
-	err = p.db.QueryRow("SELECT COUNT(*) FROM dosen_pembimbing WHERE id = $1", dosen_pembimbing_id).Scan(&countDosenPembimbing)
+	err = p.db.QueryRow("SELECT COUNT(*) FROM dosen WHERE id = $1", dosen_pembimbing_id).Scan(&countDosenPembimbing)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

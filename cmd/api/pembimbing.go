@@ -22,6 +22,10 @@ type ResponsePembimbing struct {
 	Status string `json:"status"`
 	SuccessPembimbingResponse
 }
+type ResponsePembimbingRequest struct {
+	ID int `json:"id"`
+	SuccessPembimbingResponse
+}
 type UpdatedPembimbing struct {
 	MahasiswaID int `json:"mahasiswa_id"`
 }
@@ -62,7 +66,7 @@ func (api *API) reqPembimbing(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, ErrorPembimbingResponse{Message: err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, ResponsePembimbing{
+	c.JSON(http.StatusCreated, ResponsePembimbingRequest{
 		ID: pemId,
 		SuccessPembimbingResponse: SuccessPembimbingResponse{
 			Message: "Success Request Pembimbing",
@@ -84,10 +88,8 @@ func (api *API) updatePembimbing(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusAccepted, ResponseAccepted{
-		SuccessPembimbingResponse: SuccessPembimbingResponse{
-			Message: "Diterima Pembimbing",
-		},
+	c.JSON(http.StatusAccepted, SuccessPembimbingResponse{
+		Message: "Diterima Pembimbing",
 	})
 }
 
