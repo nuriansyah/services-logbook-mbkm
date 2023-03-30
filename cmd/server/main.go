@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+
 	configuration := config.New(".env")
 	db, err := config.NewInitializedDatabase(configuration)
 	if err != nil {
@@ -17,7 +18,8 @@ func main() {
 	pembRepo := repository.NewPembimbingRepository(db)
 	reportRepo := repository.NewReportingRepository(db)
 	detailMhsRepo := repository.NewDetailMahasiswaRepository(db)
+	commentsReport := repository.NewCommnetsRepository(db)
 
-	mainAPI := api.NewAPi(*userRepo, *pembRepo, *reportRepo, *detailMhsRepo)
+	mainAPI := api.NewAPi(*userRepo, *pembRepo, *reportRepo, *detailMhsRepo, *commentsReport)
 	mainAPI.Start()
 }
