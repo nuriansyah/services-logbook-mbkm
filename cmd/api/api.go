@@ -12,16 +12,24 @@ type API struct {
 	pembRepo        repository.PembimbingRepository
 	reportRepo      repository.ReportingRepository
 	detailmhsReport repository.DetailMahasiswaRepository
+	commentsRepo    repository.CommentsRepository
 	router          *gin.Engine
 }
 
-func NewAPi(userRepo repository.UserRepository, pembRepo repository.PembimbingRepository, reportRepo repository.ReportingRepository, detailmhsReport repository.DetailMahasiswaRepository) API {
+func NewAPi(
+	userRepo repository.UserRepository,
+	pembRepo repository.PembimbingRepository,
+	reportRepo repository.ReportingRepository,
+	detailmhsReport repository.DetailMahasiswaRepository,
+	commentsRepo repository.CommentsRepository,
+) API {
 	router := gin.Default()
 	api := &API{
 		userRepo:        userRepo,
 		pembRepo:        pembRepo,
 		reportRepo:      reportRepo,
 		detailmhsReport: detailmhsReport,
+		commentsRepo:    commentsRepo,
 		router:          router,
 	}
 
@@ -46,7 +54,8 @@ func NewAPi(userRepo repository.UserRepository, pembRepo repository.PembimbingRe
 		pembimbingRouter.GET("/getRequest", api.getAllRequest)
 		pembimbingRouter.GET("/getBimbinganRequest", api.getAllRequestBimbingan)
 		pembimbingRouter.DELETE("/:id", api.deletePembimbing)
-		pembimbingRouter.PUT("/:id/reject", api.rejectBimbingan)
+		pembimbingRouter.PUT("/:id/accepted", api.approvedBimbingan)
+		pembimbingRouter.PUT("/:id/rejected", api.rejectedBimbingan)
 	}
 	reportingRouter := router.Group("/api/reports", AuthMiddleware())
 	{
@@ -56,22 +65,38 @@ func NewAPi(userRepo repository.UserRepository, pembRepo repository.PembimbingRe
 		reportingRouter.GET("/postsDosen", api.readsReportingByDosen)
 		reportingRouter.GET("/postsMhs", api.readsReportingByMhs)
 		reportingRouter.POST("/upload", api.uploadPostDocs)
+		reportingRouter.POST("/upload/img/:id", api.uploadPostDocs)
 		reportingRouter.POST("/download/:post_id", api.downloadPostDoc)
-		reportingRouter.GET("/count", api.countAllStatus)
+		reportingRouter.GET("/approvedList", api.getApprovedReports)
+		reportingRouter.GET("/pendingList", api.getPendingReports)
+		reportingRouter.GET("/rejectList", api.getRejectedReports)
 
 	}
 	dosenRouter := router.Group("/api/dosen", AuthMiddleware())
 	{
-		dosenRouter.PUT("/changePassword", api.changePassword)
+		dosenRouter.PUT("/changePasswordDosen", api.changePasswordDosen)
 		dosenRouter.GET("/fetch", api.fetchMahasiswaByDsn)
 		dosenRouter.GET("/fetchData", api.fetchDataDosen)
 	}
 	detailmhsRouter := router.Group("/api/mahasiswa", AuthMiddleware())
 	{
+		detailmhsRouter.PUT("/changePasswordMhs", api.changePasswordMahasiswa)
 		detailmhsRouter.POST("/detail", api.insertDetailMhs)
 		detailmhsRouter.PUT("/", api.editDetailMhs)
 		detailmhsRouter.GET("/fetch", api.fetchMahasiswaByMhs)
+
 	}
+	commentsRouter := router.Group("/api/comments", AuthMiddleware())
+	{
+		commentsRouter.POST("/dosen", api.CreateCommentDosen)
+		commentsRouter.POST("/mhs", api.CreateCommentMahasiswa)
+
+		//commentsRouter.GET("/dosen/:postID", api.ReadCommentDosenByPostID)
+	}
+	router.GET("api/comments/mhs/:post_id", api.ReadCommentMahasiswaByPostID)
+	router.GET("/api/comments/dosen/:post_id", api.ReadCommentDosenByPostID)
+	router.GET("/api/comments/:post_id", api.ReadAllCommentsByPostID)
+
 	router.Use(gin.Recovery())
 
 	return *api

@@ -38,7 +38,6 @@ type RegisterSuccessResponse struct {
 	Token   string `json:"token"`
 }
 type RequestPassword struct {
-	ID       int    `json:"id"`
 	password string `json:"password"`
 }
 type DosenResponse struct {
@@ -249,13 +248,23 @@ func (api *API) fetchDataDosen(c *gin.Context) {
 	})
 }
 
-func (api *API) changePassword(c *gin.Context) {
+func (api *API) changePasswordDosen(c *gin.Context) {
 	var req RequestPassword
 	userID, err := api.getUserIdFromToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Status Unaouthorized"})
 		return
 	}
-	err = api.userRepo.ChangePassword(userID, req.password)
+	err = api.userRepo.ChangePasswordDosen(userID, req.password)
+	c.JSON(http.StatusOK, gin.H{"message": "Change Password Successfully"})
+}
+func (api *API) changePasswordMahasiswa(c *gin.Context) {
+	var req RequestPassword
+	userID, err := api.getUserIdFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Status Unaouthorized"})
+		return
+	}
+	err = api.userRepo.ChangePasswordMahasiswa(userID, req.password)
 	c.JSON(http.StatusOK, gin.H{"message": "Change Password Successfully"})
 }
