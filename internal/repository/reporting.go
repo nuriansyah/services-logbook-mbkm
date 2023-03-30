@@ -38,13 +38,13 @@ func (r *ReportingRepository) InsertReporting(title, content string, dosenID int
 }
 
 func (r *ReportingRepository) UpdateReporting(title, content string, dosenID, reportID int) (err error) {
-	sqlStatement := "UPDATE reporting SET title = $1, content = $2, pembimbing_id = $3, updated_at = $4 WHERE id = $5"
+	sqlStatement := "UPDATE reporting SET title = $1, content = $2, pembimbing_id = $3, status_id = 1 WHERE id = $4"
 	tx, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	_, err = tx.Exec(sqlStatement, title, content, dosenID, time.Now(), reportID)
+	_, err = tx.Exec(sqlStatement, title, content, dosenID, reportID)
 	if err != nil {
 		return err
 	}
@@ -60,10 +60,11 @@ func (r *ReportingRepository) FetchAuthorIDbyReportID(postID, AuthorID int) ([]R
 		reports []Reporting
 	)
 
-	sqlStatement := `SELECT r.id, title, content, created_at, p.type,s.status,r.pembimbing_id,r.status_id
+	sqlStatement := `SELECT r.id, title, content, created_at, p.type,s.status,r.pembimbing_id,r.status_id,pi.id as image_id,pi.path as image_path
     				 FROM reporting r
 					 LEFT JOIN pembimbing p on p.id = r.pembimbing_id
 					 LEFT JOIN status s on s.id = r.status_id
+    				 LEFT JOIN post_images pi on r.id = pi.post_id
 					 WHERE r.id = $1 AND p.mahasiswa_id = $2`
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -92,6 +93,8 @@ func (r *ReportingRepository) FetchAuthorIDbyReportID(postID, AuthorID int) ([]R
 			&report.Status,
 			&report.PembimbingID,
 			&report.StatusID,
+			&report.ImageID,
+			&report.ImagePath,
 		)
 		if err != nil {
 			return nil, err
@@ -203,7 +206,7 @@ func (r *ReportingRepository) FetchPembimbingByID(mhsID int) (int, error) {
 }
 
 func (r *ReportingRepository) InsertFileReporting(path string, dosenID int) (err error) {
-	sqlStatement := `INSERT INTO reporting_files (file_path,created_at,pembimbing_id) VALUES $1,$2,$3`
+	sqlStatement := `INSERT INTO reporting_files (file_path,created_at,pembimbing_id) VALUES ($1,$2,$3) RETURNING id`
 	tx, err := r.db.Begin()
 	if err != nil {
 		return
@@ -217,6 +220,23 @@ func (r *ReportingRepository) InsertFileReporting(path string, dosenID int) (err
 	if err := tx.Commit(); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r *ReportingRepository) InsertReportingImages(post_id int, path string) error {
+	sqlStatement := `INSERT INTO post_images (post_id,path) VALUES ($1,$2) RETURNING id`
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var id int
+	err = tx.QueryRow(sqlStatement, path, post_id).Scan(&id)
+
+	if error := tx.Commit(); error != nil {
+		return err
+	}
+
 	return nil
 }
 
