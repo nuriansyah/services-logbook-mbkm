@@ -1,6 +1,9 @@
 package repository
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type Mahasiswa struct {
 	Id        int    `json:"id"`
@@ -33,12 +36,24 @@ type Pembimbing struct {
 }
 
 type Reporting struct {
-	ID           int       `json:"id"`
-	Title        string    `json:"title"`
-	Content      string    `json:"content"`
-	Type         string    `json:"type"`
-	Status       string    `json:"status"`
-	CreatedAT    time.Time `json:"created_at"`
-	PembimbingID int       `json:"pembimbing_id"`
-	StatusID     int       `json:"statusID"`
+	ID           int            `json:"id"`
+	Title        string         `json:"title"`
+	Content      string         `json:"content"`
+	Type         string         `json:"type"`
+	Status       string         `json:"status"`
+	CreatedAT    time.Time      `json:"created_at"`
+	PembimbingID int            `json:"pembimbing_id"`
+	StatusID     int            `json:"statusID"`
+	ImageID      sql.NullInt32  `json:"image_id"`
+	ImagePath    sql.NullString `json:"image_path"`
+}
+type Comment struct {
+	Id        int       `json:"id"`
+	Comment   string    `json:"comments"`
+	DosenName string    `json:"dosen_name"`
+	MhsName   string    `json:"mhs_name"`
+	CreatedAT time.Time `json:"created_at"`
+	PostID    int       `json:"post_id"`
+	DosenID   int       `json:"dosenID"`
+	MhsID     int       `json:"mhsID"`
 }
