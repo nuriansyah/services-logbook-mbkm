@@ -183,12 +183,44 @@ func (p *PembimbingRepository) AcceptedBimbingan(mahasiswa_id int) (resposeCode 
 	return http.StatusAccepted, err
 }
 
-func (p *PembimbingRepository) RejectedBimbingan(mahasiswa_id int) (responseCode int, err error) {
-	sqlStatement := "UPDATE pembimbing SET type = 'bimbingan', status_id = 3 WHERE mahasiswa_id = $1;"
-	var id int
-	err = p.db.QueryRow(sqlStatement, mahasiswa_id).Scan(&id)
+func (p *PembimbingRepository) AcceptedReportingBimbingan(post_id int) (responseCode int, err error) {
+	sqlStatement := "UPDATE reporting SET status_id = 2 WHERE id = $1;"
+	result, err := p.db.Exec(sqlStatement, post_id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return http.StatusNotFound, err
+		}
+		return http.StatusInternalServerError, err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	if rowsAffected == 0 {
+		return http.StatusNotFound, sql.ErrNoRows
+	}
 
-	return http.StatusAccepted, err
+	return http.StatusOK, nil
+}
+
+func (p *PembimbingRepository) RejectedReportingBimbingan(post_id int) (responseCode int, err error) {
+	sqlStatement := "UPDATE reporting SET status_id = 3 WHERE id = $1;"
+	result, err := p.db.Exec(sqlStatement, post_id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return http.StatusNotFound, err
+		}
+		return http.StatusInternalServerError, err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	if rowsAffected == 0 {
+		return http.StatusNotFound, sql.ErrNoRows
+	}
+
+	return http.StatusOK, nil
 }
 
 func (p *PembimbingRepository) FetchMhsID(mhsID int) (int, error) {

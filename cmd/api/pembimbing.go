@@ -109,20 +109,36 @@ func (api *API) deletePembimbing(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Pembimbing request deleted successfully"})
 }
 
-func (api *API) rejectBimbingan(c *gin.Context) {
-	mhsId, err := strconv.Atoi(c.Param("id"))
+func (api *API) approvedBimbingan(c *gin.Context) {
+	post_id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
 	}
 
-	responseCode, err := api.pembRepo.RejectedBimbingan(mhsId)
+	responseCode, err := api.pembRepo.AcceptedReportingBimbingan(post_id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(responseCode, gin.H{"message": "Bimbingan rejected successfully"})
+	c.JSON(responseCode, gin.H{"message": "Bimbingan Approved successfully"})
+}
+
+func (api *API) rejectedBimbingan(c *gin.Context) {
+	post_id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
+
+	responseCode, err := api.pembRepo.RejectedReportingBimbingan(post_id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(responseCode, gin.H{"message": "Bimbingan Rejected successfully"})
 }
 
 func (api *API) getAllRequest(c *gin.Context) {
