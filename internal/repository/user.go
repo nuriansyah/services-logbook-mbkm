@@ -165,9 +165,19 @@ func (u *UserRepository) InsertDetailMahasiswa(mhs_id, batch int, company, progr
 	return userId, responseCode, err
 }
 
-func (u *UserRepository) ChangePassword(id int, password string) error {
+func (u *UserRepository) ChangePasswordMahasiswa(id int, password string) error {
 	sqlStatement := "UPDATE mahasiswa SET password = $1 WHERE id = $2"
-	_, err := u.db.Exec(sqlStatement, id, password)
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	_, err := u.db.Exec(sqlStatement, id, hashedPassword)
+	if err != nil {
+		return err
+	}
+	return err
+}
+func (u *UserRepository) ChangePasswordDosen(id int, password string) error {
+	sqlStatement := "UPDATE dosen SET password = $1 WHERE id = $2"
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	_, err := u.db.Exec(sqlStatement, id, hashedPassword)
 	if err != nil {
 		return err
 	}
