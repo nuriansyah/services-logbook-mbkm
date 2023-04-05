@@ -11,3 +11,4 @@ vendor/
 # Others
 .github
 docker-compose.yml
+Dockerfile
