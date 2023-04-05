@@ -6,7 +6,6 @@ WORKDIR /app
 # Copy the necessary files
 COPY go.mod ./
 COPY go.sum ./
-RUN go mod tidy
 RUN go mod download
 COPY . .
 
