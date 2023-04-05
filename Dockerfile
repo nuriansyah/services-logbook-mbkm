@@ -4,10 +4,8 @@ FROM golang:1.19-alpine
 WORKDIR /app
 
 # Copy the necessary files
-COPY go.mod ./
-COPY go.sum ./
-RUN go mod tidy
-RUN go mod download
+RUN go mod download && go mod verify
+
 COPY . .
 
 # Add Git
