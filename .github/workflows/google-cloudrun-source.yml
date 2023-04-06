@@ -51,9 +51,9 @@ on:
     branches: [ "main" ]
 
 env:
-  PROJECT_ID: logbook_kampus_merdeka_unpas # TODO: update Google Cloud project id
-  SERVICE: services_logbook_kampus_merdeka_unpas # TODO: update Cloud Run service name
-  REGION: asia_southeast2 # TODO: update Cloud Run service region
+  PROJECT_ID: logbook-kampus-merdeka-unpas # TODO: update Google Cloud project id
+  SERVICE: services-logbook-kampus-merdeka-unpas # TODO: update Cloud Run service name
+  REGION: asia-southeast2 # TODO: update Cloud Run service region
 
 jobs:
   deploy:
