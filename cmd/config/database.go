@@ -19,7 +19,7 @@ func NewInitializedDatabase(config Config) (*sql.DB, error) {
 func NewPostgresSQL(configuration Config) (*sql.DB, error) {
 	username := configuration.Get("DB_USERNAME")
 	password := configuration.Get("DB_PASSWORD")
-	host := configuration.Get("DB_HOST")
+	host := fmt.Sprintf("/cloudsql/%s", configuration.Get("DB_HOST"))
 	port := configuration.Get("DB_PORT")
 	database := configuration.Get("DB_DATABASE")
 	sslMode := configuration.Get("DB_SSL_MODE")
