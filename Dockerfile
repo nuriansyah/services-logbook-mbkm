@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN go mod init github.com/nuriansyah/services-logbook-mbkm && go build -o app ./cmd/server/main.go
+RUN go mod init github.com/nuriansyah/services-logbook-mbkm && go build -o /app /cmd/server/main.go
 
 EXPOSE 8080
 
