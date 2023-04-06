@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN go build -o app ./cmd/server
+RUN go mod init && go build -o app ./cmd/server
 
 EXPOSE 8080
 
