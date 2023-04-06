@@ -8,5 +8,5 @@ RUN go mod init github.com/nuriansyah/services-logbook-mbkm && go get -d -v ./..
 
 EXPOSE 8080
 
-CMD ["/app/server"]
+CMD ["/app"]
 
