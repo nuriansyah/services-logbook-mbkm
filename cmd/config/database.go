@@ -3,6 +3,7 @@ package config
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres" // Import driver for Cloud SQL Proxy
 	_ "github.com/lib/pq"
 )
 
