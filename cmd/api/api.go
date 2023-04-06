@@ -3,8 +3,8 @@ package api
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/nuriansyah/services-logbook-mbkm/cmd/config"
 	"github.com/nuriansyah/services-logbook-mbkm/internal/repository"
+	"os"
 )
 
 type API struct {
@@ -108,6 +108,10 @@ func (api *API) Handler() *gin.Engine {
 }
 
 func (api *API) Start() {
-	setPort := config.New(".env")
-	api.Handler().Run(setPort.Get("APP_PORT"))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	//log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
+	api.Handler().Run(port)
 }
