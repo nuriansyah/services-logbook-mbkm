@@ -112,5 +112,5 @@ func (api *API) Start() {
 	if port == "" {
 		port = "8080"
 	}
-	api.Handler().Run(port)
+	api.Handler().Run(":" + port)
 }
