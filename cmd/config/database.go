@@ -25,7 +25,7 @@ func NewPostgresSQL(configuration Config) (*sql.DB, error) {
 	database := configuration.Get("DB_DATABASE")
 	sslMode := configuration.Get("DB_SSL_MODE")
 
-	dsn := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=%s", host, port, username, password, database, sslMode)
+	dsn := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=%s", username, password, host, port, database, sslMode)
 	db, err := sql.Open(configuration.Get("DB_CONNECTION"), dsn)
 	if err != nil {
 		return nil, err
