@@ -19,13 +19,13 @@ func NewInitializedDatabase(config Config) (*sql.DB, error) {
 func NewPostgresSQL(configuration Config) (*sql.DB, error) {
 	username := configuration.Get("DB_USERNAME")
 	password := configuration.Get("DB_PASSWORD")
-	connectionName := configuration.Get("DB_HOST") // Menggunakan nama koneksi Cloud SQL langsung
+	host := configuration.Get("DB_HOST")
 	port := configuration.Get("DB_PORT")
 	database := configuration.Get("DB_DATABASE")
 	sslMode := configuration.Get("DB_SSL_MODE")
 
-	dsn := fmt.Sprintf("user=%s password=%s dbname=%s host=/cloudsql/%s port=%s sslmode=%s", username, password, database, connectionName, port, sslMode)
-	db, err := sql.Open("cloudsqlpostgres", dsn) // Gunakan "cloudsqlpostgres" sebagai nama driver
+	dsn := fmt.Sprintf("user=%s password=%s dbname=%s host=/cloudsql/%s port=%s sslmode=%s", username, password, database, host, port, sslMode)
+	db, err := sql.Open(configuration.Get("DB_CONNECTION"), dsn)
 	if err != nil {
 		return nil, err
 	}
