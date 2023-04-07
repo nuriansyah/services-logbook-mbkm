@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/nuriansyah/services-logbook-mbkm/utils"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
 )
@@ -37,9 +38,12 @@ type RegisterSuccessResponse struct {
 	Message string `json:"message"`
 	Token   string `json:"token"`
 }
-type RequestPassword struct {
-	password string `json:"password"`
+
+type ChangePasswordReqBody struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required"`
 }
+
 type DosenResponse struct {
 	Id    int    `json:"id"`
 	Name  string `json:"name"`
@@ -249,22 +253,90 @@ func (api *API) fetchDataDosen(c *gin.Context) {
 }
 
 func (api *API) changePasswordDosen(c *gin.Context) {
-	var req RequestPassword
+	var req ChangePasswordReqBody
+	err := c.BindJSON(&req)
+	var ve validator.ValidationErrors
+	if err != nil {
+		if errors.As(err, &ve) {
+			c.AbortWithStatusJSON(
+				http.StatusBadRequest,
+				gin.H{"errors": utils.GetErrorMessage(ve)},
+			)
+		} else {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
 	userID, err := api.getUserIdFromToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Status Unaouthorized"})
 		return
 	}
-	err = api.userRepo.ChangePasswordDosen(userID, req.password)
-	c.JSON(http.StatusOK, gin.H{"message": "Change Password Successfully"})
+	// Check if old password matches
+	isValidPassword, err := api.userRepo.CheckPasswordDosen(userID, req.OldPassword)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !isValidPassword {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "old password is incorrect"})
+		return
+	}
+
+	// Update password
+	hashedNewPassword, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	err = api.userRepo.ChangePasswordDosen(userID, string(hashedNewPassword))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "password has been updated"})
 }
 func (api *API) changePasswordMahasiswa(c *gin.Context) {
-	var req RequestPassword
+	var req ChangePasswordReqBody
+	err := c.BindJSON(&req)
+	var ve validator.ValidationErrors
+	if err != nil {
+		if errors.As(err, &ve) {
+			c.AbortWithStatusJSON(
+				http.StatusBadRequest,
+				gin.H{"errors": utils.GetErrorMessage(ve)},
+			)
+		} else {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
 	userID, err := api.getUserIdFromToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Status Unaouthorized"})
 		return
 	}
-	err = api.userRepo.ChangePasswordMahasiswa(userID, req.password)
-	c.JSON(http.StatusOK, gin.H{"message": "Change Password Successfully"})
+	// Check if old password matches
+	isValidPassword, err := api.userRepo.CheckPasswordMahasiswa(userID, req.OldPassword)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !isValidPassword {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "old password is incorrect"})
+		return
+	}
+
+	// Update password
+	hashedNewPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	err = api.userRepo.ChangePasswordMahasiswa(userID, string(hashedNewPassword)) // Convert hashedNewPassword to string
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "password has been updated"})
 }

@@ -54,9 +54,9 @@ func (u *UserRepository) LoginMahasiswa(nrp, password string) (*int, error) {
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			fmt.Println("Wrong Password")
+			return nil, fmt.Errorf("wrong Password")
 		}
-		panic(err)
+		return nil, err
 	}
 	return &id, nil
 }
@@ -167,21 +167,28 @@ func (u *UserRepository) InsertDetailMahasiswa(mhs_id, batch int, company, progr
 
 func (u *UserRepository) ChangePasswordMahasiswa(id int, password string) error {
 	sqlStatement := "UPDATE mahasiswa SET password = $1 WHERE id = $2"
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	_, err := u.db.Exec(sqlStatement, id, hashedPassword)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
-	return err
+	_, err = u.db.Exec(sqlStatement, hashedPassword, id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
+
 func (u *UserRepository) ChangePasswordDosen(id int, password string) error {
 	sqlStatement := "UPDATE dosen SET password = $1 WHERE id = $2"
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	_, err := u.db.Exec(sqlStatement, id, hashedPassword)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
-	return err
+	_, err = u.db.Exec(sqlStatement, string(hashedPassword), id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u *UserRepository) FetchMahasiswaByDosenID(dosenID int) ([]MahasiswaDetail, error) {
@@ -259,4 +266,36 @@ func (u *UserRepository) FetchDataDosen(id int) ([]Dosen, error) {
 		dosen = append(dosen, d)
 	}
 	return dosen, nil
+}
+
+func (u *UserRepository) CheckPasswordDosen(userId int, password string) (bool, error) {
+	var hashedPassword string
+	err := u.db.QueryRow("SELECT password FROM dosen WHERE id = $1", userId).Scan(&hashedPassword)
+	if err != nil {
+		return false, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+func (u *UserRepository) CheckPasswordMahasiswa(userId int, password string) (bool, error) {
+	var hashedPassword string
+	err := u.db.QueryRow("SELECT password FROM mahasiswa WHERE id = $1", userId).Scan(&hashedPassword)
+	if err != nil {
+		return false, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			return false, nil // Password does not match
+		}
+		return false, err
+	}
+
+	return true, nil // Password matches
 }
