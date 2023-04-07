@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
+	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/lib/pq"
 	"log"
 	"os"
-
-	_ "github.com/lib/pq"
 )
 
 func NewInitializedDatabase(config Config) (*sql.DB, error) {
