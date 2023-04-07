@@ -30,10 +30,10 @@ func NewPostgresSQL(conn Config) (*sql.DB, error) {
 	}
 
 	var (
-		dbUser         = mustGetenv("DB_USER")              // e.g. 'my-db-user'
-		dbPwd          = mustGetenv("DB_PASS")              // e.g. 'my-db-password'
-		unixSocketPath = mustGetenv("INSTANCE_UNIX_SOCKET") // e.g. '/cloudsql/project:region:instance'
-		dbName         = mustGetenv("DB_NAME")              // e.g. 'my-database'
+		dbUser         = mustGetenv("DB_USER") // e.g. 'my-db-user'
+		dbPwd          = mustGetenv("DB_PASS") // e.g. 'my-db-password'
+		unixSocketPath = mustGetenv("DB_HOST") // e.g. '/cloudsql/project:region:instance'
+		dbName         = mustGetenv("DB_NAME") // e.g. 'my-database'
 	)
 
 	dbURI := fmt.Sprintf("user=%s password=%s database=%s host=%s",
