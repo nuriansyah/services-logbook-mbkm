@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/lib/pq"
 	"log"
@@ -48,4 +50,44 @@ func NewPostgresSQL(conn Config) (*sql.DB, error) {
 	// ...
 
 	return dbPool, nil
+}
+func MigrateDatabase() error {
+	// Get database connection details from environment variables
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASS")
+	instanceSocket := os.Getenv("DB_HOST")
+	dbName := os.Getenv("DB_NAME")
+
+	// Build the connection string
+	connString := fmt.Sprintf("user=%s password=%s dbname=%s host=%s sslmode=disable",
+		dbUser, dbPass, dbName, instanceSocket)
+
+	// Open a connection to the database
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Set the migration path
+	migrationPath := "file://database/postgres/migration"
+	// Run migrations
+	sourceDriver, err := (&file.File{}).Open(migrationPath)
+	if err != nil {
+		return err
+	}
+	defer sourceDriver.Close()
+
+	m, err := migrate.NewWithSourceInstance("file", sourceDriver, connString)
+	if err != nil {
+		return err
+	}
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		return err
+	}
+
+	fmt.Println("Migrations completed successfully")
+
+	return nil
 }
