@@ -9,6 +9,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/lib/pq"
+	"github.com/nuriansyah/services-logbook-mbkm/database/postgres/seeder"
 	"log"
 	"os"
 )
@@ -87,6 +88,7 @@ func MigrateDatabase() error {
 		return err
 	}
 
+	seeder.Seed()
 	fmt.Println("Migrations completed successfully")
 
 	return nil
