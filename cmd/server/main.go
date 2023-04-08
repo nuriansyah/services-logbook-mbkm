@@ -13,6 +13,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer err.Error()
 
 	configuration := config.New(".env")
 	db, err := config.NewInitializedDatabase(configuration)
