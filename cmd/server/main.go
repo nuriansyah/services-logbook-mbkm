@@ -4,16 +4,9 @@ import (
 	"github.com/nuriansyah/services-logbook-mbkm/cmd/api"
 	"github.com/nuriansyah/services-logbook-mbkm/cmd/config"
 	"github.com/nuriansyah/services-logbook-mbkm/internal/repository"
-	"log"
 )
 
 func main() {
-
-	err := config.MigrateDatabase()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer err.Error()
 
 	configuration := config.New(".env")
 	db, err := config.NewInitializedDatabase(configuration)
