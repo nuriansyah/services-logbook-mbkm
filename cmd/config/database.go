@@ -11,8 +11,8 @@ import (
 	"os"
 )
 
-func NewInitializedDatabase(config Config) (*sql.DB, error) {
-	db, err := NewPostgresSQL(config)
+func NewInitializedDatabase() (*sql.DB, error) {
+	db, err := NewPostgresSQL()
 	if err != nil {
 		return nil, err
 	}
@@ -20,7 +20,7 @@ func NewInitializedDatabase(config Config) (*sql.DB, error) {
 	return db, nil
 }
 
-func NewPostgresSQL(conn Config) (*sql.DB, error) {
+func NewPostgresSQL() (*sql.DB, error) {
 	mustGetenv := func(k string) string {
 		v := os.Getenv(k)
 		if v == "" {
