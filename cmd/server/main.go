@@ -8,7 +8,8 @@ import (
 
 func main() {
 
-	db, err := config.NewInitializedDatabase()
+	configuration := config.New(".env")
+	db, err := config.NewInitializedDatabase(configuration)
 	if err != nil {
 		panic(err)
 	}
