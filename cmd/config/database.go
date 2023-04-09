@@ -7,8 +7,6 @@ import (
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/lib/pq"
-	"log"
-	"os"
 )
 
 func NewInitializedDatabase(config Config) (*sql.DB, error) {
@@ -20,32 +18,24 @@ func NewInitializedDatabase(config Config) (*sql.DB, error) {
 	return db, nil
 }
 
-func NewPostgresSQL(conn Config) (*sql.DB, error) {
-	mustGetenv := func(k string) string {
-		v := os.Getenv(k)
-		if v == "" {
-			log.Fatalf("Fatal Error in connect_unix.go: %s environment variable not set.\n", k)
-		}
-		return v
-	}
+func NewPostgresSQL(configuration Config) (*sql.DB, error) {
+	username := configuration.Get("DB_USERNAME")
+	password := configuration.Get("DB_PASSWORD")
+	host := configuration.Get("DB_HOST")
+	port := configuration.Get("DB_PORT")
+	database := configuration.Get("DB_DATABASE")
+	sslMode := configuration.Get("DB_SSL_MODE")
 
-	var (
-		dbUser         = mustGetenv("DB_USER") // e.g. 'my-db-user'
-		dbPwd          = mustGetenv("DB_PASS") // e.g. 'my-db-password'
-		unixSocketPath = mustGetenv("DB_HOST") // e.g. '/cloudsql/project:region:instance'
-		dbName         = mustGetenv("DB_NAME") // e.g. 'my-database'
-	)
-
-	dbURI := fmt.Sprintf("user=%s password=%s database=%s host=%s",
-		dbUser, dbPwd, dbName, unixSocketPath)
-
-	// dbPool is the pool of database connections.
-	dbPool, err := sql.Open("pgx", dbURI)
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", host, port, username, password, database, sslMode)
+	db, err := sql.Open(configuration.Get("DB_CONNECTION"), dsn)
 	if err != nil {
-		return nil, fmt.Errorf("sql.Open: %v", err)
+		return nil, err
 	}
 
-	// ...
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
 
-	return dbPool, nil
+	return db, nil
 }
