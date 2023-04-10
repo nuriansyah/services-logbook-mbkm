@@ -1,11 +1,11 @@
 package config
 
 import (
-	_ "cloud.google.com/go/cloudsqlconn"
+	//_ "cloud.google.com/go/cloudsqlconn"
 	"database/sql"
 	"fmt"
-	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	//_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
+	//_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/lib/pq"
 )
 
