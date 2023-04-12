@@ -1,4 +1,4 @@
-package seeder
+package main
 
 import (
 	"fmt"
@@ -38,7 +38,7 @@ type Pembimbing struct {
 	StatusID          int
 }
 
-func Seed() {
+func main() {
 	//Konfigurasi koneksi ke database
 	configuration := config.New(".env")
 	db, err := config.NewInitializedDatabase(configuration)
@@ -65,7 +65,7 @@ func Seed() {
 		},
 		{
 			Name:     "Miftahul Fadli Muttaqin, ST., MT",
-			Email:    "mifthaul@unpas.ac.id",
+			Email:    "miftahul@unpas.ac.id",
 			Password: "password",
 		},
 	}
